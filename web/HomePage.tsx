@@ -13,7 +13,7 @@ import { buildStamp } from "./buildStamp";
 
 const pathURL = new URLParam("path", "");
 const filterURL = new URLParam("filter", "");
-const contextURL = new URLParam("context", 8);
+const contextURL = new URLParam("context", 5);
 
 const mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 
