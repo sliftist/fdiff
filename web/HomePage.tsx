@@ -134,6 +134,16 @@ function buildTree(items: FileEntry[]): TreeNode {
     aggregateTree(root);
     return root;
 }
+// Files in the exact top-to-bottom order the sidebar tree shows them (folders sorted first, then files).
+function flattenTree(node: TreeNode): FileEntry[] {
+    let out: FileEntry[] = [];
+    for (let name of [...node.folders.keys()].sort()) {
+        let child = node.folders.get(name);
+        if (child) out.push(...flattenTree(child));
+    }
+    for (let f of node.files.slice().sort((a, b) => a.diff.path < b.diff.path && -1 || 1)) out.push(f);
+    return out;
+}
 
 // Assigns new-file line numbers (removed lines get none) then keeps only the lines within `context`
 // of a change, replacing longer unchanged runs with a gap marker.
@@ -702,6 +712,8 @@ export class HomePage extends preact.Component {
         this.buildLinkIndex();
         // Cap at 80vw in CSS so an oversized stored width can never break the layout.
         let sidebarWidth = "min(" + (Number(sidebarWidthParam.value) || 260) + "px, 80vw)";
+        let tree = buildTree(visible);
+        let ordered = flattenTree(tree);
         return (
             <div className={css.size("100vw", "100vh").vbox(0).alignItems("stretch").hsl(0, 0, 7).hslcolor(0, 0, 92).overflowHidden}>
                 <style>{`@keyframes fdiffBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(500%); } }`}</style>
@@ -715,7 +727,7 @@ export class HomePage extends preact.Component {
                         ref={el => this.sidebarEl = el || undefined}
                         className={css.width(sidebarWidth).flexShrink0.overflowYAuto.hsl(0, 0, 9).paddingTop(6).paddingBottom(6)}
                     >
-                        {this.renderTreeNode(buildTree(visible), 0)}
+                        {this.renderTreeNode(tree, 0)}
                         {!visible.length && <div className={css.pad2(12).hslcolor(0, 0, 50)}>No matches.</div>}
                     </div>
                     <div
@@ -730,7 +742,7 @@ export class HomePage extends preact.Component {
                         {this.synced.error && <div className={css.pad2(16).hslcolor(0, 70, 66).whiteSpace("pre-wrap").fontFamily(mono).fontSize(12)}>{this.synced.error}</div>}
                         {!this.synced.diffs.length && <div className={css.pad2(16)}>No pending changes.</div>}
                         {this.synced.diffs.length && !visible.length && <div className={css.pad2(16).hslcolor(0, 0, 55)}>No files match the filter.</div>}
-                        {visible.map(x => this.renderFile(x.diff, x.index))}
+                        {ordered.map(x => this.renderFile(x.diff, x.index))}
                     </div>
                 </div>
                 {this.renderSettings()}
