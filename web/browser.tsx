@@ -1,18 +1,14 @@
 import * as preact from "preact";
 import { isNode } from "typesafecss";
-
-function Page() {
-    return (
-        <div style={{ textAlign: "center" }}>
-            <h1 style={{ fontSize: "3rem", margin: 0 }}>Hello World</h1>
-            <p style={{ opacity: 0.6 }}>fdiff — built with the sliftutils bundler</p>
-        </div>
-    );
-}
+import { configureMobxNextFrameScheduler } from "sliftutils/render-utils/mobxTyped";
+import { Page } from "./Page";
 
 function main() {
     if (isNode()) return;
-    preact.render(<Page />, document.getElementById("app")!);
+    configureMobxNextFrameScheduler();
+    let app = document.getElementById("app");
+    if (!app) throw new Error(`Expected an #app element to render into, was ${app}`);
+    preact.render(<Page />, app);
 }
 
 main();

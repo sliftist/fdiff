@@ -1,0 +1,63 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true , configurable: true});
+exports.nodeRepoFS = void 0;
+const fs = __importStar(require("fs"));
+const nodePath = __importStar(require("path"));
+// Node-backed RepoFS, used only for tests — it lets the exact browser code run against a real repo
+// so we can diff its output against `git` itself.
+function nodeRepoFS(root) {
+    return {
+        async readFile(path) {
+            try {
+                return new Uint8Array(await fs.promises.readFile(nodePath.join(root, path)));
+            }
+            catch (_a) {
+                return undefined;
+            }
+        },
+        async readDir(path) {
+            try {
+                let entries = await fs.promises.readdir(nodePath.join(root, path), { withFileTypes: true });
+                return entries.map(e => ({ name: e.name, kind: e.isDirectory() ? "directory" : "file" }));
+            }
+            catch (_a) {
+                return undefined;
+            }
+        },
+        async stat(path) {
+            try {
+                let st = await fs.promises.stat(nodePath.join(root, path));
+                return { size: st.size, mtimeMs: st.mtimeMs };
+            }
+            catch (_a) {
+                return undefined;
+            }
+        },
+    };
+}
+exports.nodeRepoFS = nodeRepoFS;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoibm9kZUZTLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsibm9kZUZTLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBQUEsdUNBQXlCO0FBQ3pCLCtDQUFpQztBQUdqQyxtR0FBbUc7QUFDbkcsa0RBQWtEO0FBQ2xELFNBQWdCLFVBQVUsQ0FBQyxJQUFZO0lBQ25DLE9BQU87UUFDSCxLQUFLLENBQUMsUUFBUSxDQUFDLElBQUk7WUFDZixJQUFJLENBQUM7Z0JBQ0QsT0FBTyxJQUFJLFVBQVUsQ0FBQyxNQUFNLEVBQUUsQ0FBQyxRQUFRLENBQUMsUUFBUSxDQUFDLFFBQVEsQ0FBQyxJQUFJLENBQUMsSUFBSSxFQUFFLElBQUksQ0FBQyxDQUFDLENBQUMsQ0FBQztZQUNqRixDQUFDO1lBQUMsV0FBTSxDQUFDO2dCQUNMLE9BQU8sU0FBUyxDQUFDO1lBQ3JCLENBQUM7UUFDTCxDQUFDO1FBQ0QsS0FBSyxDQUFDLE9BQU8sQ0FBQyxJQUFJO1lBQ2QsSUFBSSxDQUFDO2dCQUNELElBQUksT0FBTyxHQUFHLE1BQU0sRUFBRSxDQUFDLFFBQVEsQ0FBQyxPQUFPLENBQUMsUUFBUSxDQUFDLElBQUksQ0FBQyxJQUFJLEVBQUUsSUFBSSxDQUFDLEVBQUUsRUFBRSxhQUFhLEVBQUUsSUFBSSxFQUFFLENBQUMsQ0FBQztnQkFDNUYsT0FBTyxPQUFPLENBQUMsR0FBRyxDQUFDLENBQUMsQ0FBQyxFQUFFLENBQUMsQ0FBQyxFQUFFLElBQUksRUFBRSxDQUFDLENBQUMsSUFBSSxFQUFFLElBQUksRUFBRSxDQUFDLENBQUMsV0FBVyxFQUFFLENBQUMsQ0FBQyxDQUFDLFdBQW9CLENBQUMsQ0FBQyxDQUFDLE1BQWUsRUFBRSxDQUFDLENBQUMsQ0FBQztZQUNoSCxDQUFDO1lBQUMsV0FBTSxDQUFDO2dCQUNMLE9BQU8sU0FBUyxDQUFDO1lBQ3JCLENBQUM7UUFDTCxDQUFDO1FBQ0QsS0FBSyxDQUFDLElBQUksQ0FBQyxJQUFJO1lBQ1gsSUFBSSxDQUFDO2dCQUNELElBQUksRUFBRSxHQUFHLE1BQU0sRUFBRSxDQUFDLFFBQVEsQ0FBQyxJQUFJLENBQUMsUUFBUSxDQUFDLElBQUksQ0FBQyxJQUFJLEVBQUUsSUFBSSxDQUFDLENBQUMsQ0FBQztnQkFDM0QsT0FBTyxFQUFFLElBQUksRUFBRSxFQUFFLENBQUMsSUFBSSxFQUFFLE9BQU8sRUFBRSxFQUFFLENBQUMsT0FBTyxFQUFFLENBQUM7WUFDbEQsQ0FBQztZQUFDLFdBQU0sQ0FBQztnQkFDTCxPQUFPLFNBQVMsQ0FBQztZQUNyQixDQUFDO1FBQ0wsQ0FBQztLQUNKLENBQUM7QUFDTixDQUFDO0FBMUJELGdDQTBCQyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCAqIGFzIGZzIGZyb20gXCJmc1wiO1xuaW1wb3J0ICogYXMgbm9kZVBhdGggZnJvbSBcInBhdGhcIjtcbmltcG9ydCB7IFJlcG9GUyB9IGZyb20gXCIuL2dpdENvcmVcIjtcblxuLy8gTm9kZS1iYWNrZWQgUmVwb0ZTLCB1c2VkIG9ubHkgZm9yIHRlc3RzIOKAlCBpdCBsZXRzIHRoZSBleGFjdCBicm93c2VyIGNvZGUgcnVuIGFnYWluc3QgYSByZWFsIHJlcG9cbi8vIHNvIHdlIGNhbiBkaWZmIGl0cyBvdXRwdXQgYWdhaW5zdCBgZ2l0YCBpdHNlbGYuXG5leHBvcnQgZnVuY3Rpb24gbm9kZVJlcG9GUyhyb290OiBzdHJpbmcpOiBSZXBvRlMge1xuICAgIHJldHVybiB7XG4gICAgICAgIGFzeW5jIHJlYWRGaWxlKHBhdGgpIHtcbiAgICAgICAgICAgIHRyeSB7XG4gICAgICAgICAgICAgICAgcmV0dXJuIG5ldyBVaW50OEFycmF5KGF3YWl0IGZzLnByb21pc2VzLnJlYWRGaWxlKG5vZGVQYXRoLmpvaW4ocm9vdCwgcGF0aCkpKTtcbiAgICAgICAgICAgIH0gY2F0Y2gge1xuICAgICAgICAgICAgICAgIHJldHVybiB1bmRlZmluZWQ7XG4gICAgICAgICAgICB9XG4gICAgICAgIH0sXG4gICAgICAgIGFzeW5jIHJlYWREaXIocGF0aCkge1xuICAgICAgICAgICAgdHJ5IHtcbiAgICAgICAgICAgICAgICBsZXQgZW50cmllcyA9IGF3YWl0IGZzLnByb21pc2VzLnJlYWRkaXIobm9kZVBhdGguam9pbihyb290LCBwYXRoKSwgeyB3aXRoRmlsZVR5cGVzOiB0cnVlIH0pO1xuICAgICAgICAgICAgICAgIHJldHVybiBlbnRyaWVzLm1hcChlID0+ICh7IG5hbWU6IGUubmFtZSwga2luZDogZS5pc0RpcmVjdG9yeSgpID8gXCJkaXJlY3RvcnlcIiBhcyBjb25zdCA6IFwiZmlsZVwiIGFzIGNvbnN0IH0pKTtcbiAgICAgICAgICAgIH0gY2F0Y2gge1xuICAgICAgICAgICAgICAgIHJldHVybiB1bmRlZmluZWQ7XG4gICAgICAgICAgICB9XG4gICAgICAgIH0sXG4gICAgICAgIGFzeW5jIHN0YXQocGF0aCkge1xuICAgICAgICAgICAgdHJ5IHtcbiAgICAgICAgICAgICAgICBsZXQgc3QgPSBhd2FpdCBmcy5wcm9taXNlcy5zdGF0KG5vZGVQYXRoLmpvaW4ocm9vdCwgcGF0aCkpO1xuICAgICAgICAgICAgICAgIHJldHVybiB7IHNpemU6IHN0LnNpemUsIG10aW1lTXM6IHN0Lm10aW1lTXMgfTtcbiAgICAgICAgICAgIH0gY2F0Y2gge1xuICAgICAgICAgICAgICAgIHJldHVybiB1bmRlZmluZWQ7XG4gICAgICAgICAgICB9XG4gICAgICAgIH0sXG4gICAgfTtcbn1cbiJdfQ==
+ /* _JS_SOURCE_HASH = "2d7b906d07efc779d340d52dcc851b0f8f2c00651c67064d557ff9e49268e0ba"; */

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "build-web",
+    "build": "node scripts/writeBuildStamp.js && build-web",
     "host": "python3 hoster.py"
   },
   "dependencies": {
