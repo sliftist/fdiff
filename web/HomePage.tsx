@@ -9,6 +9,7 @@ import { fsAccessRepoFS } from "../git/fsAccessFS";
 import { GitObjectStore } from "../git/objectStore";
 import { readIndex } from "../git/gitIndex";
 import { getPendingChanges, getFileDiff, DiffLine, ChangeStatus } from "../git/gitStatus";
+import { grammarForPath, tokenizeLine, GrammarInfo } from "./highlight";
 import { buildStamp } from "./buildStamp";
 
 const pathURL = new URLParam("path", "");
@@ -24,6 +25,21 @@ const sidebarWidthParam = new LocalStorageParamStr("fdiff-sidebar-width", "260")
 const linkFilesParam = new LocalStorageParamStr("fdiff-link-files", "1");
 const collapseKeyParam = new LocalStorageParamStr("fdiff-key-collapse", "[");
 const expandKeyParam = new LocalStorageParamStr("fdiff-key-expand", "]");
+const highlightParam = new LocalStorageParamStr("fdiff-highlight", "1");
+
+// Maps a Prism token type to a color, or undefined to inherit the line's color.
+function tokenColor(type: string) {
+    if (type === "comment" || type === "prolog" || type === "cdata" || type === "doctype") return css.hslcolor(0, 0, 48).fontStyle("italic");
+    if (type === "keyword" || type === "boolean" || type === "atrule" || type === "important" || type === "rule") return css.hslcolor(265, 60, 76);
+    if (type === "string" || type === "char" || type === "attr-value" || type === "regex" || type === "url" || type === "template-string") return css.hslcolor(95, 42, 64);
+    if (type === "number") return css.hslcolor(28, 78, 68);
+    if (type === "function" || type === "method" || type === "function-variable") return css.hslcolor(48, 78, 70);
+    if (type === "class-name" || type === "builtin" || type === "constant" || type === "maybe-class-name") return css.hslcolor(180, 48, 70);
+    if (type === "operator" || type === "punctuation" || type === "entity") return css.hslcolor(0, 0, 66);
+    if (type === "property" || type === "tag" || type === "selector" || type === "symbol") return css.hslcolor(355, 62, 74);
+    if (type === "attr-name" || type === "namespace" || type === "parameter") return css.hslcolor(30, 60, 72);
+    return undefined;
+}
 
 function escapeRegex(s: string) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -259,6 +275,33 @@ export class HomePage extends preact.Component {
         }
         let names = [...map.keys()].sort((a, b) => b.length - a.length).map(escapeRegex);
         this.linkRegex = new RegExp("(?<![A-Za-z0-9_])(?:" + names.join("|") + ")(?![A-Za-z0-9_])", "g");
+    }
+
+    // Grammar for the file currently being rendered (set in renderFile), or undefined when highlighting
+    // is off or the language is unknown.
+    currentGrammar: GrammarInfo | undefined = undefined;
+
+    renderContent(text: string): preact.ComponentChild[] {
+        if (!this.currentGrammar) return this.linkifyText(text);
+        return this.renderTokens(tokenizeLine(text, this.currentGrammar), "t");
+    }
+    renderTokens(tokens: (string | { type: string; content: unknown })[], prefix: string): preact.ComponentChild[] {
+        let out: preact.ComponentChild[] = [];
+        for (let i = 0; i < tokens.length; i++) {
+            let t = tokens[i];
+            if (typeof t === "string") {
+                out.push(...this.linkifyText(t));
+                continue;
+            }
+            let content = this.tokenContent(t.content, prefix + i + "-");
+            out.push(<span key={prefix + i} className={tokenColor(t.type) || undefined}>{content}</span>);
+        }
+        return out;
+    }
+    tokenContent(content: unknown, prefix: string): preact.ComponentChild[] {
+        if (typeof content === "string") return this.linkifyText(content);
+        if (Array.isArray(content)) return this.renderTokens(content, prefix);
+        return this.renderTokens([content as { type: string; content: unknown }], prefix);
     }
 
     linkifyText(text: string): preact.ComponentChild[] {
@@ -498,7 +541,7 @@ export class HomePage extends preact.Component {
                     + (line.kind === "-" && css.hslcolor(0, 55, 80))
                     + (line.kind === " " && css.hslcolor(0, 0, 78))
                 }>
-                    {this.linkifyText(line.text)}
+                    {this.renderContent(line.text)}
                 </span>
             </div>
         );
@@ -507,6 +550,7 @@ export class HomePage extends preact.Component {
     renderFile(diff: RenderedDiff, index: number) {
         let collapsed = collapsedKeys().has(diff.key);
         let counts = countChanges(diff);
+        this.currentGrammar = highlightParam.value !== "0" && grammarForPath(diff.path) || undefined;
         return (
             <div key={diff.path} id={fileId(index)} className={css.marginBottom(2)}
                 onMouseEnter={() => { this.hovered = diff.key; this.hoveredIndex = index; }}
@@ -675,6 +719,9 @@ export class HomePage extends preact.Component {
                     {row("Font family",
                         <input className={inputStyle + css.width(240)} type="text"
                             value={fontFamilyParam.value} onInput={e => fontFamilyParam.value = e.currentTarget.value} />)}
+                    {row("Syntax highlighting",
+                        <input type="checkbox" checked={highlightParam.value !== "0"}
+                            onChange={e => highlightParam.value = e.currentTarget.checked && "1" || "0"} />)}
                     {row("Link file names in diffs",
                         <input type="checkbox" checked={linkFilesParam.value !== "0"}
                             onChange={e => linkFilesParam.value = e.currentTarget.checked && "1" || "0"} />)}

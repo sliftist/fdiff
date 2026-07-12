@@ -7,6 +7,7 @@
     "host": "python3 hoster.py"
   },
   "dependencies": {
+    "prismjs": "^1.30.0",
     "sliftutils": "^1.7.5",
     "typenode": "^6.6.1"
   }
