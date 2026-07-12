@@ -197,6 +197,9 @@ export class HomePage extends preact.Component {
     // The file section the mouse is currently over — target of the [ and ] hotkeys. Not observable;
     // only read inside the key handler.
     hovered: string | undefined = undefined;
+    hoveredIndex: number | undefined = undefined;
+    // Set when a section is collapsed, so componentDidUpdate can scroll its header back into view.
+    pendingScrollIndex: number | undefined = undefined;
 
     onKeyDown = (e: KeyboardEvent) => {
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -206,8 +209,12 @@ export class HomePage extends preact.Component {
         if (!this.hovered) return;
         e.preventDefault();
         let keys = collapsedKeys();
-        if (isCollapse) keys.add(this.hovered);
-        else keys.delete(this.hovered);
+        if (isCollapse) {
+            keys.add(this.hovered);
+            this.pendingScrollIndex = this.hoveredIndex;
+        } else {
+            keys.delete(this.hovered);
+        }
         writeCollapsed(keys);
     };
 
@@ -297,13 +304,14 @@ export class HomePage extends preact.Component {
     scrollRaf = 0;
     lastVisibleKey = "";
 
-    onMainScroll = () => {
+    scheduleUpdateVisible = () => {
         if (this.scrollRaf) return;
         this.scrollRaf = requestAnimationFrame(() => {
             this.scrollRaf = 0;
             this.updateVisible();
         });
     };
+    onMainScroll = () => this.scheduleUpdateVisible();
     updateVisible() {
         let main = this.mainEl;
         if (!main) return;
@@ -326,6 +334,17 @@ export class HomePage extends preact.Component {
         document.removeEventListener("keydown", this.onKeyDown);
         document.removeEventListener("mousemove", this.onResize);
         document.removeEventListener("mouseup", this.stopResize);
+    }
+
+    componentDidUpdate() {
+        // Keep a just-collapsed section's header in view so the layout shift isn't disorienting.
+        if (this.pendingScrollIndex !== undefined) {
+            let el = document.getElementById(fileId(this.pendingScrollIndex));
+            this.pendingScrollIndex = undefined;
+            if (el) el.scrollIntoView({ block: "nearest" });
+        }
+        // Collapsing/filtering/expanding gaps changes which sections are on screen; recompute (throttled).
+        this.scheduleUpdateVisible();
     }
 
     async componentDidMount() {
@@ -396,15 +415,20 @@ export class HomePage extends preact.Component {
     expandAll() {
         writeCollapsed(new Set());
     }
-    toggleCollapse(diff: RenderedDiff) {
+    toggleCollapse(diff: RenderedDiff, index: number) {
         let keys = collapsedKeys();
-        if (keys.has(diff.key)) keys.delete(diff.key);
-        else keys.add(diff.key);
+        if (keys.has(diff.key)) {
+            keys.delete(diff.key);
+        } else {
+            keys.add(diff.key);
+            this.pendingScrollIndex = index;
+        }
         writeCollapsed(keys);
     }
-    collapse(diff: RenderedDiff) {
+    collapse(diff: RenderedDiff, index: number) {
         let keys = collapsedKeys();
         keys.add(diff.key);
+        this.pendingScrollIndex = index;
         writeCollapsed(keys);
     }
 
@@ -476,9 +500,9 @@ export class HomePage extends preact.Component {
         let counts = countChanges(diff);
         return (
             <div key={diff.path} id={fileId(index)} className={css.marginBottom(2)}
-                onMouseEnter={() => this.hovered = diff.key}
+                onMouseEnter={() => { this.hovered = diff.key; this.hoveredIndex = index; }}
                 onMouseDown={e => { if (e.button === 1) e.preventDefault(); }}
-                onAuxClick={e => { if (e.button === 1) { e.preventDefault(); this.collapse(diff); } }}
+                onAuxClick={e => { if (e.button === 1) { e.preventDefault(); this.collapse(diff, index); } }}
             >
                 <div
                     className={css.button.hbox(8).alignItems("center").paddingLeft(8).paddingRight(10).paddingTop(4).paddingBottom(4)
@@ -486,7 +510,7 @@ export class HomePage extends preact.Component {
                         + (collapsed && css.hsl(0, 0, 15).borderBottom("1px solid hsl(0, 0%, 22%)"))
                         + (!collapsed && css.hsl(212, 48, 26).borderBottom("1px solid hsl(212, 45%, 40%)"))
                     }
-                    onClick={() => this.toggleCollapse(diff)}
+                    onClick={() => this.toggleCollapse(diff, index)}
                 >
                     <span className={css.width(10).hslcolor(0, 0, 55)}>{collapsed && "▶" || "▼"}</span>
                     {this.renderCounts(counts.added, counts.removed)}
