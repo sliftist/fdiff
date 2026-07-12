@@ -74,6 +74,15 @@ function fileId(index: number) {
     return "file-" + index;
 }
 
+// Scrolls to a file section. Uses scrollIntoView (not just the hash) so a click always scrolls, even
+// when the hash is already that id; the hash is kept in sync for shareable URLs.
+function scrollToFile(index: number) {
+    let id = fileId(index);
+    let el = document.getElementById(id);
+    if (el) el.scrollIntoView({ block: "start" });
+    if (window.location.hash !== "#" + id) window.location.hash = "#" + id;
+}
+
 // Renders an epoch-ms timestamp in the viewer's local time zone (UTC is not useful to read).
 function formatBuildTime(ms: number) {
     let d = new Date(ms);
@@ -267,7 +276,7 @@ export class HomePage extends preact.Component {
                 <span
                     key={match.index}
                     className={css.button.textDecoration("underline").hslcolor(210, 85, 74)}
-                    onClick={() => window.location.hash = "#" + fileId(index || 0)}
+                    onClick={() => scrollToFile(index || 0)}
                 >
                     {name}
                 </span>
@@ -622,7 +631,7 @@ export class HomePage extends preact.Component {
                     className={css.button.hbox(6).alignItems("center").justifyContent("space-between").paddingRight(8).paddingTop(2).paddingBottom(2).paddingLeft(indent)
                         + (onScreen && css.hsl(212, 48, 28))
                         + (!onScreen && expanded && css.hsla(212, 60, 55, 0.14))}
-                    onClick={() => window.location.hash = "#" + fileId(f.index)}>
+                    onClick={() => scrollToFile(f.index)}>
                     <span className={css.flexGrow(1).minWidth(0).wordBreak("break-all").fontFamily(mono).fontSize(12).hslcolor(0, 0, 84).textDecoration("underline")}>
                         {parts[parts.length - 1]}
                     </span>
