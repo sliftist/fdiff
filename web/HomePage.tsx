@@ -392,6 +392,11 @@ export class HomePage extends preact.Component {
         else keys.add(diff.key);
         writeCollapsed(keys);
     }
+    collapse(diff: RenderedDiff) {
+        let keys = collapsedKeys();
+        keys.add(diff.key);
+        writeCollapsed(keys);
+    }
 
     visibleDiffs() {
         let filter = filterURL.value.toLowerCase();
@@ -460,7 +465,11 @@ export class HomePage extends preact.Component {
         let collapsed = collapsedKeys().has(diff.key);
         let counts = countChanges(diff);
         return (
-            <div key={diff.path} id={fileId(index)} className={css.marginBottom(2)} onMouseEnter={() => this.hovered = diff.key}>
+            <div key={diff.path} id={fileId(index)} className={css.marginBottom(2)}
+                onMouseEnter={() => this.hovered = diff.key}
+                onMouseDown={e => { if (e.button === 1) e.preventDefault(); }}
+                onAuxClick={e => { if (e.button === 1) { e.preventDefault(); this.collapse(diff); } }}
+            >
                 <div
                     className={css.button.hbox(8).alignItems("center").paddingLeft(8).paddingRight(10).paddingTop(4).paddingBottom(4)
                         .hsl(0, 0, 15).position("sticky").top(0).zIndex(1).borderBottom("1px solid hsl(0, 0%, 22%)")}
