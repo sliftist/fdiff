@@ -1,0 +1,13 @@
+{
+  "name": "fdiff",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "build-web",
+    "host": "python3 hoster.py"
+  },
+  "dependencies": {
+    "sliftutils": "^1.7.5",
+    "typenode": "^6.6.1"
+  }
+}
