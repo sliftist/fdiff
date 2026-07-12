@@ -482,7 +482,10 @@ export class HomePage extends preact.Component {
             >
                 <div
                     className={css.button.hbox(8).alignItems("center").paddingLeft(8).paddingRight(10).paddingTop(4).paddingBottom(4)
-                        .hsl(212, 48, 26).position("sticky").top(0).zIndex(1).borderBottom("1px solid hsl(212, 45%, 40%)")}
+                        .position("sticky").top(0).zIndex(1)
+                        + (collapsed && css.hsl(0, 0, 15).borderBottom("1px solid hsl(0, 0%, 22%)"))
+                        + (!collapsed && css.hsl(212, 48, 26).borderBottom("1px solid hsl(212, 45%, 40%)"))
+                    }
                     onClick={() => this.toggleCollapse(diff)}
                 >
                     <span className={css.width(10).hslcolor(0, 0, 55)}>{collapsed && "▶" || "▼"}</span>
@@ -587,12 +590,14 @@ export class HomePage extends preact.Component {
         for (let f of files) {
             let counts = countChanges(f.diff);
             let parts = f.diff.path.split("/");
-            // Highlight files whose expanded section is currently on screen (collapsed ones are skipped).
-            let highlighted = this.synced.visible.indexOf(f.index) >= 0 && !collapsedKeys().has(f.diff.key);
+            // Expanded files get a faint blue; those also currently on screen get a stronger blue.
+            let expanded = !collapsedKeys().has(f.diff.key);
+            let onScreen = expanded && this.synced.visible.indexOf(f.index) >= 0;
             rows.push(
                 <div key={"f:" + f.index}
                     className={css.button.hbox(6).alignItems("center").justifyContent("space-between").paddingRight(8).paddingTop(2).paddingBottom(2).paddingLeft(indent)
-                        + (highlighted && css.hsl(210, 45, 22))}
+                        + (onScreen && css.hsl(212, 48, 28))
+                        + (!onScreen && expanded && css.hsla(212, 60, 55, 0.14))}
                     onClick={() => window.location.hash = "#" + fileId(f.index)}>
                     <span className={css.flexGrow(1).minWidth(0).wordBreak("break-all").fontFamily(mono).fontSize(12).hslcolor(0, 0, 84).textDecoration("underline")}>
                         {parts[parts.length - 1]}
