@@ -482,7 +482,7 @@ export class HomePage extends preact.Component {
             >
                 <div
                     className={css.button.hbox(8).alignItems("center").paddingLeft(8).paddingRight(10).paddingTop(4).paddingBottom(4)
-                        .hsl(0, 0, 15).position("sticky").top(0).zIndex(1).borderBottom("1px solid hsl(0, 0%, 22%)")}
+                        .hsl(212, 48, 26).position("sticky").top(0).zIndex(1).borderBottom("1px solid hsl(212, 45%, 40%)")}
                     onClick={() => this.toggleCollapse(diff)}
                 >
                     <span className={css.width(10).hslcolor(0, 0, 55)}>{collapsed && "▶" || "▼"}</span>
