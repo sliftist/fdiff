@@ -233,4 +233,69 @@ export class GitObjectStore {
         await this.readTree(treeLine.slice(5).trim(), "", out);
         return out;
     }
+
+    async readCommit(sha: string) {
+        let obj = await this.readObject(sha);
+        if (obj.type !== "commit") throw new Error(`Expected commit, was ${obj.type} for ${sha}`);
+        let text = new TextDecoder().decode(obj.data);
+        let split = text.indexOf("\n\n");
+        let header = text;
+        let message = "";
+        if (split >= 0) {
+            header = text.slice(0, split);
+            message = text.slice(split + 2);
+        }
+        let tree = "";
+        let parents: string[] = [];
+        let author = "";
+        let authorTime = 0;
+        let committerTime = 0;
+        for (let line of header.split("\n")) {
+            if (line.startsWith("tree ")) tree = line.slice(5).trim();
+            else if (line.startsWith("parent ")) parents.push(line.slice(7).trim());
+            else if (line.startsWith("author ")) { let id = parseIdent(line); author = id.name; authorTime = id.time; }
+            else if (line.startsWith("committer ")) committerTime = parseIdent(line).time;
+        }
+        return { sha, tree, parents, author, authorTime, committerTime, message: message.replace(/\n+$/, "") };
+    }
+
+    private findTreeEntry(data: Uint8Array, name: string) {
+        let pos = 0;
+        while (pos < data.length) {
+            let space = data.indexOf(0x20, pos);
+            let mode = new TextDecoder().decode(data.subarray(pos, space));
+            let nul = data.indexOf(0x00, space + 1);
+            let entryName = new TextDecoder().decode(data.subarray(space + 1, nul));
+            let sha = toHex(data.subarray(nul + 1, nul + 21));
+            pos = nul + 21;
+            if (entryName === name) return { mode, sha };
+        }
+        return undefined;
+    }
+
+    // Resolves a "/"-separated path within a tree to its blob (or subtree) sha, or undefined if absent.
+    async resolvePath(treeSha: string, parts: string[]): Promise<string | undefined> {
+        let current = treeSha;
+        for (let i = 0; i < parts.length; i++) {
+            let obj = await this.readObject(current);
+            if (obj.type !== "tree") return undefined;
+            let entry = this.findTreeEntry(obj.data, parts[i]);
+            if (!entry) return undefined;
+            if (i === parts.length - 1) return entry.sha;
+            if (entry.mode !== "40000") return undefined;
+            current = entry.sha;
+        }
+        return undefined;
+    }
+}
+
+// Parses a git "author"/"committer" identity line: "author Name <email> 1700000000 -0500".
+function parseIdent(line: string) {
+    let timeMatch = line.match(/ (\d+) [+-]\d{4}\s*$/);
+    let time = 0;
+    if (timeMatch) time = Number(timeMatch[1]) * 1000;
+    let nameMatch = line.match(/^\S+ (.*?) </);
+    let name = "";
+    if (nameMatch) name = nameMatch[1];
+    return { name, time };
 }

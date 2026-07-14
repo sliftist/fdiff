@@ -10,11 +10,13 @@ import { GitObjectStore } from "../git/objectStore";
 import { readIndex } from "../git/gitIndex";
 import { getPendingChanges, getFileDiff, DiffLine, ChangeStatus } from "../git/gitStatus";
 import { grammarForPath, tokenizeLine, GrammarInfo } from "./highlight";
+import { HistoryView } from "./HistoryView";
 import { buildStamp } from "./buildStamp";
 
 const pathURL = new URLParam("path", "");
 const filterURL = new URLParam("filter", "");
 const contextURL = new URLParam("context", 5);
+const fileURL = new URLParam("file", "");
 
 const mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 
@@ -280,6 +282,8 @@ export class HomePage extends preact.Component {
     // Grammar for the file currently being rendered (set in renderFile), or undefined when highlighting
     // is off or the language is unknown.
     currentGrammar: GrammarInfo | undefined = undefined;
+    // Kept after load so the single-file history view can read objects.
+    repoStore: GitObjectStore | undefined = undefined;
 
     renderContent(text: string): preact.ComponentChild[] {
         if (!this.currentGrammar) return this.linkifyText(text);
@@ -438,6 +442,7 @@ export class HomePage extends preact.Component {
         try {
             let fs = fsAccessRepoFS(handle);
             let store = new GitObjectStore(fs);
+            this.repoStore = store;
             let changes = await getPendingChanges(fs);
             let index = await readIndex(fs);
             let byPath = new Map(index.map(e => [e.path, e]));
@@ -571,6 +576,8 @@ export class HomePage extends preact.Component {
                         {diff.status}
                     </span>
                     <span className={css.fontFamily(mono).fontSize(12).wordBreak("break-all")}>{diff.path}</span>
+                    <span className={css.button.textDecoration("underline").hslcolor(210, 82, 74).fontSize(11).flexShrink0.marginLeft("auto").paddingLeft(8)}
+                        onClick={e => { e.stopPropagation(); fileURL.value = diff.path; }}>history</span>
                 </div>
                 {!collapsed && diff.lines && (
                     <div className={css.fontFamily(fontFamilyParam.value || mono).fontSize(Number(fontSizeParam.value) || 12).lineHeight(Number(lineHeightParam.value) || 1.25).hsl(0, 0, 9)}>
@@ -791,6 +798,10 @@ export class HomePage extends preact.Component {
                     {this.renderSettings()}
                 </div>
             );
+        }
+
+        if (fileURL.value && this.repoStore) {
+            return <HistoryView key={fileURL.value} store={this.repoStore} path={fileURL.value} onClose={() => fileURL.value = ""} />;
         }
 
         let visible = this.visibleDiffs();
