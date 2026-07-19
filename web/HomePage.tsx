@@ -837,7 +837,7 @@ export class HomePage extends preact.Component {
                     >
                         {this.synced.error && <div className={css.pad2(16).hslcolor(0, 70, 66).whiteSpace("pre-wrap").fontFamily(mono).fontSize(12)}>{this.synced.error}</div>}
                         {!this.synced.diffs.length && <div className={css.pad2(16)}>No pending changes.</div>}
-                        {this.synced.diffs.length && !visible.length && <div className={css.pad2(16).hslcolor(0, 0, 55)}>No files match the filter.</div>}
+                        {this.synced.diffs.length > 0 && !visible.length && <div className={css.pad2(16).hslcolor(0, 0, 55)}>No files match the filter.</div>}
                         {ordered.map(x => this.renderFile(x.diff, x.index))}
                     </div>
                 </div>
